@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# Virtual environments
+.env/
+
+# IDEs
+.vscode/
+
+# OS
+.DS_Store
+
+# Project specific directories
+data/
+tutorials/
+notebooks/examples/
+notebooks/archived/
+xenium_5001.txt
