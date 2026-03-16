@@ -5,7 +5,7 @@ import numpy as np
 import squidpy as sq
 import scanpy as sc
 
-def spatial_plot_cell_types(
+def spatial_plot_cell_types_individual(
     adata,
     sample_name,
     ct_col,
@@ -14,41 +14,45 @@ def spatial_plot_cell_types(
     palette=None,
     size=10,
     save=False,
-    na_label="NA",          # label to use for missing values plot
-    other_label="Other",    # label for non-target cells in each panel
+    include_na=False,
 ):
     adata_sample = adata[adata.obs["sample_name"] == sample_name].copy()
 
-    # Identify cell types, including NA as its own category/panel
+    # Get cell types 
     ct_series = adata_sample.obs[ct_col]
-    has_na = ct_series.isna().any()
-
-    # Non-missing types (sorted for stable ordering)
     cts = list(np.sort(ct_series.dropna().unique().astype(str)))
-    if has_na:
-        cts.append(na_label)
+    
+    # Include NA in cell types if requested and present
+    has_na = ct_series.isna().any()
+    if include_na and has_na:
+        cts.append('NA')
 
+    # Plot params
     n_ct = len(cts)
     nrows = math.ceil(n_ct / ncols)
-
     if figsize is None:
         figsize = (4 * ncols, 4 * nrows)
-
     fig, ax = plt.subplots(nrows, ncols, figsize=figsize, tight_layout=True)
     ax = np.array(ax).reshape(-1)  # flatten safely for 1 row/col cases
 
+    try:
+        palette = dict(zip(adata_sample.obs[ct_col].cat.categories, adata_sample.uns[f'{ct_col}_colors'])) 
+        palette['NA'] = '#000000'
+    except:
+        palette = None
+
+    # Plot each cell type
     for i, ct in enumerate(cts):
         # Build a per-panel mask (special handling for NA)
-        if ct == na_label:
+        if ct == 'NA':
             mask = ct_series.isna()
-            panel_label = na_label
+            panel_label = 'NA'
         else:
-            # compare as strings to be robust to mixed dtypes
             mask = ct_series.astype(str) == ct
             panel_label = ct
 
         # Make an object/string series to avoid dtype promotion issues
-        is_ct = np.where(mask.to_numpy(), panel_label, other_label).astype(object)
+        is_ct = np.where(mask.to_numpy(), panel_label, "Other").astype(object)
         adata_sample.obs["is_ct"] = is_ct
 
         # Background: all cells (no color)
@@ -75,8 +79,7 @@ def spatial_plot_cell_types(
                     palette=ListedColormap([palette[panel_label]]),
                 )
             else:
-                sq.pl.spatial_scatter(
-                    adata_fg,
+                sq.pl.spatial_scatter(adata_fg,
                     library_id="spatial",
                     shape=None,
                     color="is_ct",
