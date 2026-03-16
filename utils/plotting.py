@@ -5,6 +5,49 @@ import numpy as np
 import squidpy as sq
 import scanpy as sc
 
+
+def spatial_plot_cell_types_layered(
+    adata, 
+    sample_name, 
+    ct_col, 
+    subset=False, 
+    save=False,
+    figsize=None
+):
+
+    adata_sample = adata[adata.obs["sample_name"] == sample_name].copy()
+
+    if subset:
+        cats = adata_sample.obs[ct_col].cat.categories
+        colors = adata_sample.uns.pop(f'{ct_col}_colors')
+        colors_mask = cats.isin(subset)
+        
+        adata_sample.obs[ct_col] = np.select([adata_sample.obs[ct_col].isin(subset)], [adata_sample.obs[ct_col]], np.nan)
+        adata_sample.uns[f'{ct_col}_colors'] = colors[colors_mask]
+        
+    fig, ax = plt.subplots(1,1, figsize=figsize)
+        
+    ax = sq.pl.spatial_scatter(
+        adata_sample,
+        library_id="spatial",
+        shape=None,
+        color=[ct_col],
+        size=1,
+        na_color='lightgray',
+        return_ax=True,
+        ax=ax
+    )
+
+    ax.set_axis_off()
+    plt.title(sample_name)
+    plt.show()
+
+    if save:
+        fig.savefig(f'figures/spatial_plots/{sample_name}_cell_type_general_layered.png', bbox_inches="tight")
+
+
+
+
 def spatial_plot_cell_types_individual(
     adata,
     sample_name,
@@ -104,6 +147,7 @@ def spatial_plot_cell_types_individual(
 
     if save:
         fig.savefig(f"figures/spatial_plots/{sample_name}_{ct_col}_individual.png", bbox_inches="tight")
+
 
 
 
