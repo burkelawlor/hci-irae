@@ -43,7 +43,7 @@ def spatial_plot_cell_types_layered(
     plt.show()
 
     if save:
-        fig.savefig(f'figures/spatial_plots/{sample_name}_cell_type_general_layered.png', bbox_inches="tight")
+        fig.savefig(f'figures/spatial_plots/{sample_name}_{ct_col}_layered.png', bbox_inches="tight")
 
 
 
